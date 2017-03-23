@@ -1,0 +1,417 @@
+author = "Architecht";
+
+OnLoadName = "Operation Overlord";
+OnLoadmission = "Both sides have a limited amount of resources and manpower... may the greater side win.";
+OnLoadIntro = "Mission by Architecht";
+loadScreen = "LS.jpg";
+overviewPicture = "LS.jpg";
+overviewText = "Fight for dominance over a german held beach with limitations on men and ammo.";
+
+respawnDelay = 10;
+respawnDialog = 0;
+respawnButton = true;
+respawn = 3;
+
+reviveMode = 1;
+reviveDelay = 3;
+reviveUnconsciousStateMode = 2;
+reviveRequiredTrait = 0;
+reviveRequiredItems = 0;
+reviveMedicSpeedMultiplier = 2;
+reviveForceRespawnDelay = 3;
+reviveBleedOutDelay = 120;
+
+wreckManagerMode = 0;
+wreckLimit = 100;
+wreckRemovalMinTime = 0;
+wreckRemovalMaxTime = 0;
+
+corpseManagerMode = 1;
+corpseRemovalMinTime = 0;
+corpseRemovalMaxTime = 0;
+
+aikills = 1;
+disabledAI = 0;
+enableDebugConsole = 1;
+allowFunctionsLog = 1;
+
+#include "plugins\ServerInfoMenu\hpp\CfgServerInfoMenu.hpp"
+#include "plugins\ServerInfoMenu\hpp\RscDisplayServerInfoMenu.hpp"
+#include "plugins\plank\plank.h"
+
+class Header
+{
+	gameType="Coop";
+	minPlayers=1;
+	maxPlayers=15;
+};
+class RscTitles {
+	#include "plugins\ais_injury\dialogs\rscTitlesAIS.hpp"
+};
+
+class CfgSounds
+{
+	sounds[]= {gunshot};
+
+	class gunshot
+	{
+		name = "gunshot";
+		sound[] = {sound\gunshot.ogg, db+3, 1};
+		titles[] = {};
+	};
+	// Definition for each sound
+	class expozie
+	{
+		name = "expozie"; // Name for mission editor
+		sound[] = {\sound\expozie.ogg, db+20, 1.0};
+		titles[] = {0, ""};	
+	};		
+	class bariera_1
+	{
+		name = "bariera_1"; // Name for mission editor
+		sound[] = {\sound\bariera_1.ogg, db+15, 1.0};
+		titles[] = {0, ""};	
+	};	
+	class bariera_2
+	{
+		name = "bariera_2"; // Name for mission editor
+		sound[] = {\sound\bariera_2.ogg, db+15, 1.0};
+		titles[] = {0, ""};	
+	};	
+	class bariera_3
+	{
+		name = "bariera_3"; // Name for mission editor
+		sound[] = {\sound\bariera_3.ogg, db+15, 1.0};
+		titles[] = {0, ""};	
+	};	
+	class bariera_4
+	{
+		name = "bariera_4"; // Name for mission editor
+		sound[] = {\sound\bariera_4.ogg, db+15, 1.0};
+		titles[] = {0, ""};	
+	};	
+	class bariera_5
+	{
+		name = "bariera_5"; // Name for mission editor
+		sound[] = {\sound\bariera_5.ogg, db+15, 1.0};
+		titles[] = {0, ""};	
+	};	
+	class ground_air
+	{
+		name = "ground_air"; // Name for mission editor
+		sound[] = {\sound\ground_air.ogg, db+15, 1.0};
+		titles[] = {0, ""};	
+	};
+	class rafala_1
+	{
+		name = "rafala_1";
+		sound[] = {"\sound\rafala_1.ogg", db-5, 1};
+		titles[] = {1, ""};
+	};	
+	class rafala_2
+	{
+		name = "rafala_2";
+		sound[] = {"\sound\rafala_2.ogg", db-10, 1};
+		titles[] = {1, ""};
+	};	
+	class rafala_4_dr
+	{
+		name = "rafala_4_dr";
+		sound[] = {"\sound\rafala_4_dr.ogg", db-5, 1};
+		titles[] = {1, ""};
+	};	
+	class rafala_5_st
+	{
+		name = "rafala_5_st";
+		sound[] = {"\sound\rafala_5_st.ogg", db-5, 1};
+		titles[] = {1, ""};
+	};
+	class rafala_6
+	{
+		name = "rafala_6";
+		sound[] = {"\sound\rafala_6.ogg", db+0, 1};
+		titles[] = {1, ""};
+	};	
+	class rafala_7
+	{
+		name = "rafala_7";
+		sound[] = {"\sound\rafala_7.ogg", db-5, 1};
+		titles[] = {1, ""};
+	};	
+	class rafala_8
+	{
+		name = "rafala_8";
+		sound[] = {"\sound\rafala_8.ogg", db+0, 1};
+		titles[] = {1, ""};
+	};	
+	class rafala_9
+	{
+		name = "rafala_9";
+		sound[] = {"\sound\rafala_9.ogg", db-5, 1};
+		titles[] = {1, ""};
+	};
+};
+
+class CfgSFX
+{
+	sounds[] = {};
+
+	class DDayNews
+	{
+		name = "DDayNews";
+		sounds[]={sfxsound};
+		sfxsound[]={"sound\DDayNews.ogg",15,1,18,1,1,1,0};
+		empty[]= {"",0,0,0,0,0,0,0};
+	};
+ 
+	class DDayNews2
+	{
+		name = "DDayNews2";
+		sounds[]={sfxsound};
+		sfxsound[]={"sound\DDayNews2.ogg",15,1,18,1,1,1,0};
+		empty[]= {"",0,0,0,0,0,0,0};
+	};
+
+	class EasternFrontNews
+	{
+		name = "EasternFrontNews";
+		sounds[]={sfxsound};
+		sfxsound[]={"sound\EasternFrontNews.ogg",10,1,18,1,1,1,0};
+		empty[]= {"",0,0,0,0,0,0,0};
+	};
+
+	class MusicUS1
+	{
+		name = "MusicUS1";
+		sounds[]={sfxsound};
+		sfxsound[]={"sound\MusicUS1.ogg",15,1,18,1,1,1,0};
+		empty[]= {"",0,0,0,0,0,0,0};
+	};
+	
+	class MusicUS2
+	{
+		name = "MusicUS2";
+		sounds[]={sfxsound};
+		sfxsound[]={"sound\MusicUS2.ogg",15,1,18,1,1,1,0};
+		empty[]= {"",0,0,0,0,0,0,0};
+	};
+ 
+	class MusicUS3
+	{
+		name = "MusicUS3";
+		sounds[]={sfxsound};
+		sfxsound[]={"sound\MusicUS3.ogg",15,1,18,1,1,1,0};
+		empty[]= {"",0,0,0,0,0,0,0};
+	};
+
+	class nazisong1
+	{
+		name = "nazisong1";
+		sounds[]={sfxsound};
+		sfxsound[]={"sound\nazisong1.ogg",15,1,18,1,1,1,0};
+		empty[]= {"",0,0,0,0,0,0,0};
+	};
+
+	class nazisong2
+	{
+		name = "nazisong2";
+		sounds[]={sfxsound};
+		sfxsound[]={"sound\nazisong2.ogg",15,1,18,1,1,1,0};
+		empty[]= {"",0,0,0,0,0,0,0};
+	};
+	
+	class nazisong3
+	{
+		name = "nazisong3";
+		sounds[]={sfxsound};
+		sfxsound[]={"sound\nazisong3.ogg",15,1,18,1,1,1,0};
+		empty[]= {"",0,0,0,0,0,0,0};
+	};
+ 
+	class nazisong4
+	{
+		name = "nazisong4";
+		sounds[]={sfxsound};
+		sfxsound[]={"sound\nazisong4.ogg",15,1,18,1,1,1,0};
+		empty[]= {"",0,0,0,0,0,0,0};
+	};
+
+	class sovietsong1
+	{
+		name = "sovietsong1";
+		sounds[]={sfxsound};
+		sfxsound[]={"sound\sovietsong1.ogg",15,1,18,1,1,1,0};
+		empty[]= {"",0,0,0,0,0,0,0};
+	};
+
+	class Stalinspeech
+	{
+		name = "Stalinspeech";
+		sounds[]={sfxsound};
+		sfxsound[]={"sound\Stalinspeech.ogg",15,1,18,1,1,1,0};
+		empty[]= {"",0,0,0,0,0,0,0};
+	};
+
+	class Stalinspeech2
+	{
+		name = "Stalinspeech2";
+		sounds[]={sfxsound};
+		sfxsound[]={"sound\Stalinspeech2.ogg",15,1,18,1,1,1,0};
+		empty[]= {"",0,0,0,0,0,0,0};
+	};
+
+	class Stalinspeech3
+	{
+		name = "Stalinspeech3";
+		sounds[]={sfxsound};
+		sfxsound[]={"sound\Stalinspeech3.ogg",15,1,18,1,1,1,0};
+		empty[]= {"",0,0,0,0,0,0,0};
+	};
+
+	class Hitlerspeech1
+	{
+		name = "Hitlerspeech1";
+		sounds[]={sfxsound};
+		sfxsound[]={"sound\Hitlerspeech1.ogg",15,1,18,1,1,1,0};
+		empty[]= {"",0,0,0,0,0,0,0};
+	};
+
+	class Hitlerspeech2
+	{
+		name = "Hitlerspeech2";
+		sounds[]={sfxsound};
+		sfxsound[]={"sound\Hitlerspeech2.ogg",15,1,18,1,1,1,0};
+		empty[]= {"",0,0,0,0,0,0,0};
+	};
+
+	class USSRwarannouncement
+	{
+		name = "USSRwarannouncment";
+		sounds[]={sfxsound};
+		sfxsound[]={"sound\USSRwarannouncement.ogg",15,1,18,1,1,1,0};
+		empty[]= {"",0,0,0,0,0,0,0};
+	};
+};
+
+class cfgFunctions 
+{
+	class DMC 
+	{
+		class ServerFunctions 
+		{
+			class spawnAirPatrol 
+			{
+				file = "plugins\ambient\fn_spawnAirPatrol.sqf";
+				preInit = 0; // Passed arguments are ["preInit"]
+				postInit = 0; // Passed arguments are ["postInit"]
+				recompile = 0; // Mission functions are always compiled on init. No need to be redundant.
+				ext = ".sqf"; // Default is ".sqf".
+			};
+		};
+	};
+	#include "plugins\ais_injury\cfgFunctionsAIS.hpp"
+};
+
+class CfgDebriefing
+{  
+	class GermanWon
+	{
+		title = "The Invasion has been repelled!";
+		subtitle = "";
+		description = "The reich will be pleased with you performance.";
+	};
+	class GermanLost
+	{
+		title = "The Americans have secured a beachhead.";
+		subtitle = "";
+		description = "The furhrer will not be happy.  Return in a bodybag or not at all.";
+	};
+	class USWon
+	{
+		title = "Operation Overlord was a success!";
+		subtitle = "";
+		description = "Those krauts are running with their tails between their legs.  Report to your company for debreif.";
+	};
+	class USLost
+	{
+		title = "Retreat! This landing is a failure.";
+		subtitle = "";
+		description = "The french will have to wait a little longer for our support.";
+	};
+};
+
+class Params
+{
+	class SQU_HexResolution {
+		title = "How dense should the hexes be?";
+		values[] = {7,10,15,20,25};
+		texts[] = {"Huge Hexes","Larger Hexes","Normal Hexes","Smaller Hexes","Tiny Hexes"};
+		default = 10;
+	};
+	class SQU_MapType {
+		title = "What type of map mode do you want?";
+		values[] = {0,1,2};
+		texts[] = {"Fog of War","Board Game","Battlelines"};
+		default = 2;
+	};
+	class SQU_TownWin {
+		title = "Percentage of Towns Captured For Win";
+		values[] = {100,95,90,85,80,75,70};
+		texts[] = {"100%","95%","90%","85%","80%","75%","70%"};
+		default = 90;
+	};	
+	class SQU_HexWin {
+		title = "Percentage of Hexagons Captured For Win";
+		values[] = {100,95,90,85,80,75,70};
+		texts[] = {"100%","95%","90%","85%","80%","75%","70%"};
+		default = 90;
+	};
+	class SQU_TicketDef {
+		title = "How many tickets should the Axis start with?";
+		values[] = {99999999999,5000,2000,1000,750,500,250,0};
+		texts[] = {"Near Endless","5000","2000","1000","750","500","250","0"};
+		default = 500;
+	};
+	class SQU_TicketAtt {
+		title = "How many tickets should the Allies start with?";
+		values[] = {99999999999,5000,2000,1000,750,500,250,0};
+		texts[] = {"Near Endless","5000","2000","1000","750","500","250","0"};
+		default = 5000;
+	};
+	class SQU_AirStrength {
+		title = "How large should the german ambient air patrol be?";
+		values[] = {0,1,2,3,4,5,6,7};
+		texts[] = {"None","1","2","3","4","5","6","7"};
+		default = 1;
+	};
+	class SQU_AmmoStart {
+		title = "How many magazines should everyone start with?";
+		values[] = {0,1,2,3,4,5,6,7};
+		texts[] = {"None","1","2","3","4","5","6","7"};
+		default = 2;
+	};
+	class SQU_AmmoMax {
+		title = "How many magazines can be carried?";
+		values[] = {7,8,9,10,12,15,20,25};
+		texts[] = {"7","8","9","10","12","15","20","25"};
+		default = 10;
+	};
+	class SQU_AmmoSupply {
+		title = "How many magazines should be supplied per cycle?";
+		values[] = {0,1,2,3};
+		texts[] = {"None","1","2","3"};
+		default = 1;
+	};
+	class SQU_PatrolPerc {
+		title = "How much should patrols be emphasized?";
+		values[] = {0,10,20,30};
+		texts[] = {"None","0.1%","0.2%","0.3%"};
+		default = 10;
+	};
+	class SQU_MapAllowed {
+		title = "Should the map be allowed for all units?";
+		values[] = {1,0};
+		texts[] = {"No","Yes"};
+		default = 0;
+	};
+};

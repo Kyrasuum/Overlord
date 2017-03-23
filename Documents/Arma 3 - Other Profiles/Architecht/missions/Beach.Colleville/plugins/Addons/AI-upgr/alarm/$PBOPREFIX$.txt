@@ -1,0 +1,5 @@
+///////<HEADER>///////
+prefix=alarm
+Pbo Type is: Arma Addon
+Sha: 'A818C7B2958CAB8D9CF509885D1290723B44C99D'
+//////</HEADER>//////
