@@ -193,8 +193,11 @@ AI_findPath = {
 		_StrLocs = [_hex] call SQU_ReturnNeighbours;
 		_locs = [];
 		{
-			if (!isNil{missionNamespace getVariable [_x,nil]} && (missionNamespace getVariable _x)getVariable "SQU_HexType" in _type) then {
-				_locs = _locs + [missionNamespace getVariable _x];
+			if (!(isNil{missionNamespace getVariable _x}))then{
+				_loc = (missionNamespace getVariable _x);
+				if ( (_loc getVariable "SQU_HexType") in _type) then {
+					_locs = _locs + [_loc];
+				};
 			};
 		} forEach _StrLocs;
 
@@ -284,9 +287,9 @@ AI_squadCom = {
 	// garrison/patrol (GUARD/SUPPORT)
 	// take town/territory (MOVE)
 	// entering / exiting vehicles (GETIN/GETOUT)
-	_clk = time + 90;
 	_grp = _this select 0;
 	_order =  _this select 1;
+	_clk = _this select 2;
 	while {time < _clk} do {
 		//check if we have atleast one unit alive
 		_grpAlive = false;
@@ -337,17 +340,15 @@ AI_squadCom = {
 						if (_unit == _ldr) then {
 							//move to point
 							_movePos = waypointPosition _order;
-							_unit doMove _movePos;
 						}else{
 							//follow the leader
-							_unit doFollow _ldr;
+							_movePos = position _ldr;
 						};
 					}else{
 						//in vehicle
 						if (driver vehicle _unit == _unit) then {
 							//drive baby drive
 							_movePos = waypointPosition _order;
-							_unit doMove _movePos;
 						}else{
 							//we are a passenger
 						};
@@ -404,14 +405,14 @@ AI_squadCom = {
 									};
 							}forEach _list;
 
-							//if we have a static available then prioritze taking it
 							if (count _staticWeapons > 0)then{
+								//if we have a static available then prioritze taking it
 								_unit assignAsGunner (_staticWeapons select 0);
 								[_unit] orderGetIn true;
+								_movePos = position (_staticWeapons select 0);
 							}else{
+								//move towards cover
 								_movePos = [_pos,_direc] call AI_findCover;
-								//our movepos is now a valid position behind cover so we can move to our new cover position
-								_unit doMove _movePos;
 							};
 						}else{//already in cover
 							_unit doWatch _direc;
@@ -468,17 +469,13 @@ AI_squadCom = {
 							};
 						}else{
 							//set our movepos to be a retreat
-							_movePos = getPos [100,_target+180];
+							_movePos = (position _unit) getPos [100,_target+180];
 							//request support
 							[_direc,side _ldr] execVM "scripts\objArty.sqf";
 							//check if we are effective... if so switch to SAD
 							if (_unit getVariable "Suppression" < 0.5) then {
 								_order setWaypointType "SAD";
 							};
-						};
-						if (driver _veh == _unit) then {
-							//move towards ordered movepos
-							_unit doMove _movePos;
 						};
 					};
 					//check if engagement is over... if so change to move
@@ -495,30 +492,54 @@ AI_squadCom = {
 						_target = [];//initialize it
 						if (isnil {_unit getVariable "PatrolTarget"}) then {
 							//no patrol target set... we will make one
-							_target = [ ["land"],[_pos, SQU_capRad],[],[0,99999],0,false,500 ] call SQU_RandomMapPos;
-							_unit setVariable ["PatrolTarget",_target];
+							_hex = _pos call SQU_Find_Loc;
+							_StrLocs = [_hex] call SQU_ReturnNeighbours;
+							_locs = [];
+							{
+								if (!isNil{missionNamespace getVariable [_x,nil]} && (missionNamespace getVariable _x)getVariable "SQU_HexType" in ["LAND","COAST"]) then {
+									_locs = _locs + [missionNamespace getVariable _x];
+								};
+							} forEach _StrLocs;
+
+							_target = locationPosition (selectRandom _locs);
+							if (!isNil "_target") then {
+								_unit setVariable ["PatrolTarget",_target];
+							};
 						}else{
 							//retrieve our patrol target
 							_target = _unit getVariable "PatrolTarget";
 						};
 
-						//check if we have reached our patrol target
-						while {_unit distance _target < 10} do {
-							//assign a new patrol target until we have a valid one
-							_target = [ ["land"],[_pos, SQU_HexRadius],[],[0,99999],0,false,500 ] call SQU_RandomMapPos;
+						if (!isNil "_target") then {
+							//check if we have reached our patrol target
+							while {_unit distance _target < 10} do {
+								//assign a new patrol target until we have a valid one
+								_hex = _pos call SQU_Find_Loc;
+								_StrLocs = [_hex] call SQU_ReturnNeighbours;
+								_locs = [];
+								{
+									if (!isNil{missionNamespace getVariable [_x,nil]} && (missionNamespace getVariable _x)getVariable "SQU_HexType" in ["LAND","COAST"]) then {
+										_locs = _locs + [missionNamespace getVariable _x];
+									};
+								} forEach _StrLocs;
+
+								_target = locationPosition (selectRandom _locs);
+							};
+							if (!isNil "_target") then {
+								_unit setVariable ["PatrolTarget",_target];
+								//advance with patrol
+								_movePos = _target;
+								_unit doWatch _target;
+								_order setWaypointSpeed "FULL";
+								_order setWaypointBehaviour "AWARE";
+							};
 						};
-						_unit setVariable ["PatrolTarget",_target];
-						//advance with patrol
-						_unit doMove _target;
-						_unit doWatch _target;
-						_order setWaypointSpeed "FULL";
-						_order setWaypointBehaviour "AWARE";
 					}else{
 						//assign an abitrary position which depends on our squad member number and squad size
 						_target = (_forEachIndex/count(units group _unit))*180 + (getDir _ldr);//watch a half circle direction to our front
 						_direc = _pos getPos [SQU_HexRadius, _target];
 						//advance with patrol
-						_unit doFollow _ldr;
+						_movePos = position _ldr;
 						_unit doWatch _direc;
 					};
 					//check if we engaged an enemy
@@ -559,14 +580,13 @@ AI_squadCom = {
 							}else{
 								_movePos = [_pos,_direc] call AI_findCover;
 								//our movepos is now a valid position behind cover so we can move to our new cover position
-								_unit doMove _movePos;
 								_order setWaypointSpeed "FULL";
 								_order setWaypointBehaviour "AWARE";
 							};
 						}else{
 							//already in cover
 							//be a garrison... cards anyone?
-							_x doWatch _direc;
+							_unit doWatch _direc;
 							_order setWaypointBehaviour "AWARE";
 
 							//check if we engaged an enemy so we can hide in a hole
@@ -580,39 +600,34 @@ AI_squadCom = {
 						};
 					}else{
 						//currently in a vehicle
-						if (position _x distance _pos > SQU_HexRadius) then {
+						if (waypointPosition _order distance _pos > SQU_HexRadius) then {
 							//we are far from our guard objective
-							if (driver vehicle _x == _x) then {
-								//we are the driver
-								_x doMove _pos;
-								_order setWaypointSpeed "FULL";
-								_order setWaypointBehaviour "AWARE";
-							};
+							_order setWaypointSpeed "FULL";
+							_order setWaypointBehaviour "AWARE";
 						}else{
 							//we are at our objective
-							if (!(vehicle _x isKindOf "Plane")) then {
-								//we are not in a plane... we can dismount
-								unassignVehicle _x;
-								doGetOut _x;
-							};
+							_order setWaypointType "GETOUT";
 						};
 					};
 				};
 				//we are boarding a vehicle
 				if (waypointType _order == "GETIN" && !isNil{waypointAttachedVehicle _order}) then {
 					_veh = waypointAttachedVehicle _order;
-					if (_veh distance _pos < (20 + sizeOf(typeOf(_veh)))) then {
+					_movePos = position _veh;
+					if (_veh distance _pos < (50 + sizeOf(typeOf(_veh)))) then {
 						//just get in the fuckin vehicle already
 						[_grp, _veh] call AI_boardVeh;
 						//_order setWaypointType "MOVE";
+						[_grp, _clk] spawn AI_aiComm;//request new order
+						_clk = -1;//end loop
 					}else{
 						//move along, nothing to see here.
-						_unit doMove (position _veh);
 					};
 				};
 				//we are exiting a vehicle
 				if (waypointType _order == "GETOUT") then {
 					_veh = vehicle _unit;
+					_movePos = waypointPosition _order;
 					if (_veh isKindOf "PLANE") then {
 						//we are in a plane
 						if ( (waypointPosition _order) distance2D _pos < 100) exitWith {
@@ -628,6 +643,10 @@ AI_squadCom = {
 						};
 					};
 				};
+				//move towards calculated position with behavior determined above
+				if (!(isNil "_movePos")) then {
+					_unit setDestination [_movePos, "LEADER PLANNED", true];
+				};
 			};
 		}forEach (units _grp);
 		sleep 0.1;
@@ -636,10 +655,11 @@ AI_squadCom = {
 
 //this handles the Ai director which orders the squads around
 AI_aiComm = {
-	_grp = _this;
+	_grp = _this select 0;
+	_clk = _this select 1;
 	_unit = leader _grp;
 
-    if(alive _unit && _unit in (playableUnits+allPlayers+switchableUnits))then{
+    if(alive _unit)then{
 	    //declares
 		_side = side _unit;
 		_si = Sides find _side;
@@ -698,18 +718,32 @@ AI_aiComm = {
 			if (vehicle _unit != _unit && !((vehicle _unit) isKindOf "Ship") && ((SQU_Patrols select _si) / (_side countSide allGroups)) < PatrolPerc) then {
 				//find the biggest gap in defenses
 				_dist = 0;//initializing
-				_movePos = selectRandom SQU_Frontlines;//failsafe incase no friendlies along border
+				_movePos = position _unit;//failsafe incase no friendlies along border
 				{
-					_hex = _x;
+					_pos = locationPosition _x;
 					//now find the postition with the furthest friendlies
+					//first find units
+					_units = (nearestObjects [_pos,["Man"],SQU_capRad*3]);
+					//sort to only friendlies
+					_friendlies = [];
 					{
-						if(side _x == _side) exitWith {
-							if (_x distance _movePos > _dist) then {
-								_movePos = locationPosition _hex;
+						if(side _x == _side) then {
+							_friendlies = _friendlies + _x;
+						};
+					} forEach _units;
+					if (count _friendlies == 0) then {
+						//if no friendlies within range
+						_movePos = _pos;
+						_dist = SQU_capRad*3;
+					}else{
+						//else compaire friendlies distances
+						{
+							if (_x distance _pos > _dist) exitWith {
+								_movePos = _pos;
 								_dist = _x distance _movePos;
 							};
-						};
-					} foreach nearestObjects [_movePos,["Man"],SQU_capRad*3];
+						} foreach _friendlies;
+					};
 				}forEach (SQU_Frontlines select _si);
 				SQU_Patrols set [_si, (SQU_Patrols select _si) + 1];//increment patrol number
 				_type = "SUPPORT";
@@ -741,7 +775,7 @@ AI_aiComm = {
 					   	  		_coast = [SQU_HexagonCoastalArray,[_pos],{_input0 distance (locationposition _x)},"ASCEND",{[_input0,_x,"WATER",[]] call AI_findPath && [_x,"LAND",[]] call AI_pathExists}] call BIS_fnc_sortBy;
 				   	  			if (count _coast > 0) then {
 					   	  			//we need to find our insertion point
-					   	  			_movePos = [_coast select 0, 1, SQU_HexRadius, 3, 2, 20, 1] call BIS_fnc_findSafePos;
+					   	  			_movePos = [(_coast select 0), 1, SQU_HexRadius, 3, 2, 20, 1] call BIS_fnc_findSafePos;
 					   	  			_type = "GETOUT";//we will disembark
 					   	  		}else{
 					   	  			//cant find any coastal territory leading to enemy territory... 
@@ -822,44 +856,17 @@ AI_aiComm = {
 					//we are not boarding a vehicle
 					//we are searching for a safe position to allow for mistakes in position
 					if (vehicle _unit isKindOf "SHIP") then {
-		   	  			_movePos = [_movePos, 1, SQU_HexRadius, 3, 2, 20, 0, [], [_movePos, _movePos]] call BIS_fnc_findSafePos;
+		   	  			_movePos = ([_movePos, 1, SQU_HexRadius, 3, 2, 20, 0, [], [_movePos, _movePos]] call BIS_fnc_findSafePos);
 					}else{
-		   	  			_movePos = [_movePos, 1, SQU_HexRadius, 3, 0, 20, 0, [], [_movePos, _movePos]] call BIS_fnc_findSafePos;
+		   	  			_movePos = ([_movePos, 1, SQU_HexRadius, 3, 0, 20, 0, [], [_movePos, _movePos]] call BIS_fnc_findSafePos);
 					};
 				};
 				_wp setWaypointType _type;
 				_wp setWaypointPosition [_movePos, 0];
 				_wp setWaypointCombatMode "RED";
 				//do internal squad commands if no player squad leader
-				[_grp,_wp] spawn AI_squadCom;
+				[_grp,_wp,_clk] spawn AI_squadCom;
 			};
 		};
 	};
 };
-
-//loop that actually does our work
-while{SQU_GameOn}do{
-	_clk = time + 100;
-	{/*Looping over all groups*/
-		_x spawn AI_aiComm;
-	}forEach allGroups;
-	waitUntil {sleep 5; time > _clk};
-};
-/*
-while{SQU_GameOn}do{
-	[] spawn{
-		_snow = [];
-		_pos = position player;
-		for "_i" from 0 to 1000 do {
-			for "_j" from 0 to 1000 do {
-				_spos = (_pos)vectorAdd((_pos getPos [(_i-500)*10,0]) getPos [(_j-500)*10,90]);
-				_obj = "snow" createVehicle _spos;	
-				_obj setPosATL[_spos select 0, _spos select 1, 10];
-				_snow = _snow + [_obj];
-			};
-		};
-		sleep 30;
-		{deleteVehicle _x}forEach _snow;
-	};
-};
-*/

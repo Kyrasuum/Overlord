@@ -7,11 +7,6 @@ loadScreen = "LS.jpg";
 overviewPicture = "LS.jpg";
 overviewText = "Fight for dominance over a german held beach with limitations on men and ammo.";
 
-respawnDelay = 10;
-respawnDialog = 0;
-respawnButton = true;
-respawn = 3;
-
 reviveMode = 1;
 reviveDelay = 3;
 reviveUnconsciousStateMode = 2;
@@ -39,12 +34,6 @@ allowFunctionsLog = 1;
 #include "plugins\ServerInfoMenu\hpp\RscDisplayServerInfoMenu.hpp"
 #include "plugins\plank\plank.h"
 
-class Header
-{
-	gameType="Coop";
-	minPlayers=1;
-	maxPlayers=15;
-};
 class RscTitles {
 	#include "plugins\ais_injury\dialogs\rscTitlesAIS.hpp"
 };

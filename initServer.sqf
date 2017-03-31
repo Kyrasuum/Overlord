@@ -63,6 +63,7 @@ _air_patrol = [
  	TRUE												// Randomize waypoints (True / False)
 ] call DMC_fnc_spawnAirPatrol;
 
+
 //Mission Defeat/Victory
 _endGameThread = [] spawn {
 	while {SQU_GameOn} do {
@@ -112,7 +113,7 @@ _reinforcementsThread = [] spawn {
 		sleep 360;//how long before we can reinforce
 
 		//reinforce the defender's tickets
-		[Sides select Defender, (paramsArray select 7)/100] call BIS_fnc_respawnTickets;		
+		[Sides select Defender, (paramsArray select 4)/100] call BIS_fnc_respawnTickets;		
 	};	
 };
 

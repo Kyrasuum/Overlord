@@ -24,8 +24,9 @@ _intro =
 	cutText ["","BLACK IN"];
 };
 [] spawn _intro;	
-player allowDamage true;
 waituntil{sleep 5; fnDone};
+player allowDamage true;
+player spawn AI_initPlayer;
 ////////////////////////////////////////////////////////////////////////////////////
 //new key binds
 waituntil {!isnull (finddisplay 46)};
@@ -33,8 +34,10 @@ eventOnKeyDown = compileFinal preprocessFileLineNumbers "scripts\eventOnKeyDown.
 (findDisplay 46) displayAddEventHandler ["KeyDown", { _this call eventOnKeyDown; }];
 //display logistics system
 addMissionEventHandler ["Draw3D", {
-	drawIcon3D ["", [1,0,0,1], player modelToWorld ( player selectionPosition "lefthand" ), 
-		0, 0, 0, format["%1",player getVariable "Logistic"], 1, 0.05, "PuristaMedium"];
+	if(alive player)then{
+		drawIcon3D ["", [1,0,0,1], player modelToWorld ( player selectionPosition "lefthand" ), 
+			0, 0, 0, format["%1",player getVariable "Logistic"], 1, 0.05, "PuristaMedium"];
+	};
 }];
 //open menu
 createDialog'RscDisplayServerInfoMenu';
@@ -92,3 +95,6 @@ createDialog'RscDisplayServerInfoMenu';
 		sleep random 30;
 	};
 };
+//respawn on start
+sleep 10;
+//player setDamage 1;

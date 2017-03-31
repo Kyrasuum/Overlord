@@ -5,7 +5,8 @@ if (isNil "paramsArray") then {
 	paramsArray = [10,2,90,90,500,5000,1,2,10,1,10,0];
 };
 enableSaving [false,false];
-enableTeamswitch false;
+RscSpectator_allowFreeCam = true;
+RscSpectator_hints = [true,true,true];
 
 //functions
 SQU_Find_Loc = compileFinal preprocessFileLineNumbers "plugins\SQU\SQU_Find_Location.sqf";
@@ -20,9 +21,13 @@ SQU_RandomMapPos = compileFinal preprocessFileLineNumbers "plugins\SQU\SQU_Rando
 SQU_checkIfEnemyisClose = compileFinal preprocessFileLineNumbers "plugins\SQU\SQU_checkIfEnemyisClose.sqf";
 SQU_FindClosestFriendlyHex = compileFinal preprocessFileLineNumbers "plugins\SQU\SQU_FindClosestFriendlyHex.sqf";
 findFaction = compileFinal preprocessFileLineNumbers "scripts\findFaction.sqf";//parses the objects side
-SQU_HEADLESS = owner (missionNamespace getVariable "HeadlessClient");
 "SQU_pvChangeHexSidePacket" addPublicVariableEventHandler {(_this select 1) call SQU_RecieveChangeHexSidePacket};//updates all clients
-call compile preprocessFileLineNumbers "plugins\plank\plank_init.sqf";
+call compileFinal preprocessFileLineNumbers "plugins\plank\plank_init.sqf";
+call compileFinal preprocessFileLineNumbers "scripts\RespawnMenu.sqf";
+call compileFinal preprocessFileLineNumbers "scripts\unitInit.sqf";
+call compileFinal preprocessFileLineNumbers "scripts\Recruit.sqf";
+call compileFinal preprocessFileLineNumbers "scripts\AIcommander.sqf";
+TCB_AIS_PATH = "plugins\ais_injury\";
 
 //defines
 SQU_Names = ["Caen","Cherbourg","Carentan","Coleville","St. Vierville","Bayeux","Trevieres","St. Laurent","Isigny","Villars","St. Lo"];
@@ -41,18 +46,28 @@ LogisticMax = paramsArray select 8;
 LogisticSupply = paramsArray select 9;
 PatrolPerc = (paramsArray select 10)/100;
 SQU_NoMap = (paramsArray select 11)==1;
+ForceSize = 10;
+
+//--//
+//Change this section to customize the sides and general feel of the mission
 Attacker = 1;
 Defender = 0;
 Sides = [west, resistance];
-SidesTxt = ["west", "guerrila"];
+//definition of equivalent static weapon for each side
+//each sub array is an array of a type of static like: AA gun, or AT gun, or Mortar
+SideStaticArr = [["",""],["",""],["",""],["",""]];
+//note this is also used by the 'Recruit.sqf' to know which units to spawn
+SidesAgents = [["LIB_GER_rifleman","LIB_GER_medic","LIB_GER_smgunner","LIB_GER_mgunner","LIB_GER_AT_soldier","LIB_GER_captain"],
+	["LIB_US_rifleman","LIB_US_medic","LIB_US_smgunner","LIB_US_mgunner","LIB_US_AT_soldier","LIB_US_captain"]];
+//--//
 if (isserver) then {
 	[Sides select Defender, paramsArray select 4] call BIS_fnc_respawnTickets;
 	[Sides select Attacker, paramsArray select 5] call BIS_fnc_respawnTickets;
 };
 
 //generation constants
-SQU_HexRadius = SQU_size*sqrt(3);
-SQU_capRad = (SQU_size+SQU_WallThickness*2)*3;
+SQU_HexRadius = SQU_size+SQU_WallThickness*2;
+SQU_capRad = SQU_HexRadius*3;
 SQU_startX = SQU_HexRadius+SQU_WallThickness*sqrt(3)*2;
 SQU_startY = SQU_HexRadius+SQU_WallThickness*2;
 SQU_GameOn = true;
@@ -79,6 +94,7 @@ SQU_Base = [];
 SQU_SideOwnedHex = [];
 SQU_Frontlines = [];
 SQU_Patrols = [];
+AI_agents = [];
 
 _i = 0;
 while {_i < (count Sides)} do {
@@ -88,6 +104,7 @@ while {_i < (count Sides)} do {
 	SQU_SideOwnedHex = SQU_SideOwnedHex + [0];
 	SQU_Frontlines = SQU_Frontlines + [[]];
 	SQU_Patrols = SQU_Patrols + [0];
+	AI_agents = AI_agents + [[]];
 	_i = _i + 1;
 };
 
@@ -97,7 +114,6 @@ enableTeamswitch false;
 
 [] call BIS_fnc_showMissionStatus;
 [] execVM "briefing.sqf";
-[] execVM "scripts\Recruit.sqf";
 [] execVM "plugins\rappelling\functions\fn_advancedSlingLoadingInit.sqf";
 
 //generate map
@@ -115,25 +131,73 @@ waituntil{sleep 5; SQU_TownDone};
 
 if (isserver) then {
 	SQU_ChangeHexSide = compileFinal preprocessFileLineNumbers "plugins\SQU\SQU_ChangeHexSide.sqf";
-	[] execvm "scripts\unitInit.sqf";
 	[] execVM "plugins\SQU\SQU_MonitorAllUnits.sqf";
-	[] execVM "scripts\AIcommander.sqf";
+	[] spawn AI_spawnWave;
 
 	SQU_onPlayerConnected = compileFinal preprocessFileLineNumbers "plugins\SQU\SQU_onPlayerConnected.sqf";
 	SQU_onPlayerDisConnected = compileFinal preprocessFileLineNumbers "plugins\SQU\SQU_onPlayerDisConnected.sqf";	
 	onPlayerConnected {[ _name, _uid, _id] spawn SQU_onPlayerConnected};
 	onPlayerDisconnected {[ _name, _uid, _id] call SQU_onPlayerDisConnected};
-};
 
-if (!isDedicated) then {
-	[] execVM "plugins\SQU\SQU_InitPlayer.sqf";
-
-	[player, [2, 2]] call plank_deploy_fnc_init;
-
-	TCB_AIS_PATH = "plugins\ais_injury\";
-	[] spawn {
-		{[_x] call compile preprocessFile (TCB_AIS_PATH+"init_ais.sqf")} forEach (if (isMultiplayer) then {playableUnits} else {switchableUnits});
+	_commander = [] spawn {
+		while{SQU_GameOn}do{
+			_clk = time + 100;
+			{/*Looping over all groups*/
+				if (count (units _x) > 0)then{
+					//give orders
+					[_x, _clk] spawn AI_aiComm;
+				}else{
+					//cleanup
+					deleteGroup _x;
+				};
+			}forEach allGroups;
+			waitUntil {sleep 5; time > _clk};
+		};
 	};
 };
 
+if (!isDedicated) then {
+	[] spawn {
+		SQU_Init_JIP_Player = compile preprocessFileLineNumbers "plugins\SQU\SQU_Init_JIP_Player.sqf";
+		if(SQU_didJIP)then
+		{
+			waitUntil{(count SQU_id) == 1};
+			publicVariableServer "SQU_id";
+			SQU_id = [];
+			waitUntil{(count SQU_id) > 1};
+
+			SQU_Base = SQU_id select 0;
+			SQU_SideOwnedResourceNames = SQU_id select 1;
+			SQU_SideOwnedHex = SQU_id select 2;
+			SQU_SideOwnedTownsNames = SQU_id select 3;
+		};
+		if(SQU_didJIP)then{[]call SQU_Init_JIP_Player};
+		SQU_ClientDone = true;
+	};
+
+	[player, [2, 2]] call plank_deploy_fnc_init;
+};
+
 fnDone = true;
+
+
+//while{SQU_GameOn}do{
+/*
+{
+	_x spawn{
+		_snow = [];
+		_pos = position _this;
+		for "_i" from 0 to 1000 do {
+			for "_j" from 0 to 1000 do {
+				_spos = (_pos)vectorAdd( [(_i-500)*10, (_j-500)*10, 0] );
+				_obj = "snow" createVehicle _spos;	
+				_obj setVectorUp (surfaceNormal _spos);
+				_snow = _snow + [_obj];
+			};
+		};
+		sleep 30;
+		{deleteVehicle _x}forEach _snow;
+	};
+}forEach allPlayers;
+//*/
+//};

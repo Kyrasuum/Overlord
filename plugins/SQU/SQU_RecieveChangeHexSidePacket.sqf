@@ -121,5 +121,5 @@ _countLose = 0;
 
 if(!isDedicated)then{   
     _msg = format["You WON %1 hexagons and LOST %2.",_countWin,_countLose];
-    if((_countWin > 0) || (_countLose > 0)) then{[_msg,-1,-1,10]spawn BIS_fnc_dynamicText;};
+    if((_countWin > 0) || (_countLose > 0)) then{[_msg,-1,safeZoneH*0.85,10]spawn BIS_fnc_dynamicText;};
 };

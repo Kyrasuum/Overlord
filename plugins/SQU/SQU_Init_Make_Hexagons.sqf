@@ -38,7 +38,7 @@ for "_h" from 0 to SQU_HozAmount-1 do //rows
 					_j = _j + 1;
 				};
 				_Location setVariable["SQU_Dispute", _temp];
-				missionNamespace setVariable[format["%1",_locNum],_Location];
+				missionNamespace setVariable[_name,_Location];
 							
 				_resArray = _resArray + [_name];
 				SQU_HexagonLocArray = SQU_HexagonLocArray + [_Location];
@@ -84,7 +84,7 @@ SQU_SideOwnedHex set[(Sides find _this), SQU_numberOfHex];
 {
 	_si = Sides find _x;
 	{
-		if (_x find (format ["respawn_",SidesTxt select _si]) >= 0) then {
+		if (_x find (format ["%1",Sides select _si]) >= 0) then {
 			_loc = (getMarkerPos _x) call SQU_Find_Loc;
 			_temp = [_loc getVariable "SQU_HexName", _loc getVariable "SQU_HexPos"];
 			SQU_Base set [_si, _temp];
@@ -93,7 +93,9 @@ SQU_SideOwnedHex set[(Sides find _this), SQU_numberOfHex];
 }forEach Sides;
 
 if(isServer)then{
-	publicVariable "SQU_HexagonLocArray";
+	publicVariable "SQU_HexagonLocArray";	
+	publicVariable "SQU_SideOwnedHex";	
+	publicVariable "SQU_SideOwnedResourceNames";	
 	publicVariable "SQU_Base";	
 };
 SQU_MapFinished = true;
