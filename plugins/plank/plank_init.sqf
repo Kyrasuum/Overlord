@@ -3,7 +3,7 @@ if (isDedicated) exitWith {};
 waitUntil {
     !isNil{BIS_fnc_init} && {BIS_fnc_init};
 };
-_plankDir = "plugins\plank\";
+plankDir = "plugins\plank\";
 // These are the available fortifications. Add or take as you wish.
 // Action text      - The text displayed by the action.
 // Classname        - The classname of the object to be placed.
@@ -87,9 +87,9 @@ plank_deploy_fnc_addPlacementActions = {
     FUN_ARGS_1(_unit);
 
     private ["_confirmActionId", "_cancelActionId", "_openActionId"];
-    _confirmActionId = _unit addAction ['<t color="#3748E3">Confirm Deployment</t>', _plankDir+"confirm_fort_action.sqf", [], 100, false, false, "", "driver _target == _this"];
-    _cancelActionId = _unit addAction ['<t color="#FF0000">Cancel Deployment</t>', _plankDir+"cancel_fort_action.sqf", [], 99, false, false, "", "driver _target == _this"];
-    _openActionId = _unit addAction ['<t color="#00FF00">Open Settings</t>', _plankDir+"open_settings_action.sqf", [], 98, false, false, "", "driver _target == _this"];
+    _confirmActionId = _unit addAction ['<t color="#3748E3">Confirm Deployment</t>', plankDir+"confirm_fort_action.sqf", [], 100, false, false, "", "driver _target == _this"];
+    _cancelActionId = _unit addAction ['<t color="#FF0000">Cancel Deployment</t>', plankDir+"cancel_fort_action.sqf", [], 99, false, false, "", "driver _target == _this"];
+    _openActionId = _unit addAction ['<t color="#00FF00">Open Settings</t>', plankDir+"open_settings_action.sqf", [], 98, false, false, "", "driver _target == _this"];
     _unit setVariable ["plank_deploy_confirmActionId", _confirmActionId, false];
     _unit setVariable ["plank_deploy_cancelActionId", _cancelActionId, false];
     _unit setVariable ["plank_deploy_openActionId", _openActionId, false];
@@ -202,8 +202,10 @@ plank_deploy_fnc_confirmFortPlacement = {
 plank_deploy_fnc_addFortificationAction = {
     FUN_ARGS_3(_unit,_count,_fortIndex);
 
+    plankDir = "plugins\plank\";
+
     if (_count > 0 && {_unit getVariable ["plank_deploy_fortIndex", -1] != _fortIndex}) then {
-        _unit addAction [format ["Place %1 (%2 left)", GET_FORT_DISPLAY_NAME(_fortIndex), _count], _plankDir+"place_fort_action.sqf", [_fortIndex], _fortIndex + 50, false, false, "", "driver _target == _this"];
+        _unit addAction [format ["Place %1 (%2 left)", GET_FORT_DISPLAY_NAME(_fortIndex), _count], plankDir+"place_fort_action.sqf", [_fortIndex], _fortIndex + 50, false, false, "", "driver _target == _this"];
     };
 };
 

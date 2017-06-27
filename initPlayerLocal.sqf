@@ -8,7 +8,7 @@ _intro =
 {
 	waitUntil {cutText ["Waiting for map to populate...","BLACK FADED"]; uiSleep 5; fnDone};
 	uiSleep 5;
-	cutText ["","BLACK FADED"];
+	cutText ["","BLACK IN"];
 
 	[
 		[
@@ -19,14 +19,11 @@ _intro =
 	] spawn BIS_fnc_typeText;
 	#define DELAY_CHARACTER	0.06;
 	#define DELAY_CURSOR	0.04;
-
-	uiSleep 10;
-	cutText ["","BLACK IN"];
+	[player, ""] call BIS_fnc_establishingShot;
 };
 [] spawn _intro;	
 waituntil{sleep 5; fnDone};
 player allowDamage true;
-player spawn AI_initPlayer;
 ////////////////////////////////////////////////////////////////////////////////////
 //new key binds
 waituntil {!isnull (finddisplay 46)};
@@ -50,13 +47,20 @@ createDialog'RscDisplayServerInfoMenu';
 ["InitializePlayer", [player]] call BIS_fnc_dynamicGroups;	
 ////////////////////////////////////////////////////////////////////////////////////
 //Effects
-"colorCorrections" ppEffectEnable true; 
-"colorCorrections" ppEffectAdjust [1,1,0,[0.1,0.15,0.25,-0.41],[0.87,0.77,0.83,0.42],[0.5,0.2,0,1]];
-"colorCorrections" ppEffectCommit 0;
+// "colorCorrections" ppEffectEnable true; 
+// "colorCorrections" ppEffectAdjust [1,1,0,[0.1,0.15,0.25,-0.41],[0.87,0.77,0.83,0.42],[0.5,0.2,0,1]];
+// "colorCorrections" ppEffectCommit 0;
 
-"FilmGrain" ppEffectEnable true; 
-"FilmGrain" ppEffectAdjust [0.1,1.5,1.7,0.2,1.0,true];
-"FilmGrain" ppEffectCommit 0;
+"colorCorrections" ppEffectAdjust [2, 30, 0, [0.0, 0.0, 0.0, 0.0], [0.8*2, 0.5*2, 0.0, 0.7], [0.9, 0.9, 0.9, 0.0]];
+"colorCorrections" ppEffectCommit 0;
+"colorCorrections" ppEffectAdjust [1, 0.8, -0.001, [0.0, 0.0, 0.0, 0.0], [0.8*2, 0.5*2, 0.0, 0.7], [0.9, 0.9, 0.9, 0.0]];  
+"colorCorrections" ppEffectCommit 3;
+"colorCorrections" ppEffectEnable true;
+"filmGrain" ppEffectEnable true; 
+"filmGrain" ppEffectAdjust [0.02, 1, 1, 0.1, 1, false];
+"filmGrain" ppEffectCommit 5;
+
+//gives us particle effects
 [] execVM "scripts\breathfog.sqf";
 ////////////////////////////////////////////////////////////////////////////////////
 //Ambient Radio
@@ -95,6 +99,10 @@ createDialog'RscDisplayServerInfoMenu';
 		sleep random 30;
 	};
 };
-//respawn on start
+////////////////////////////////////////////////////////////////////////////////////
+//initialize unit
+player spawn AI_initUnit;
+player spawn AI_initPlayer;
 sleep 10;
+//respawn on start
 //player setDamage 1;

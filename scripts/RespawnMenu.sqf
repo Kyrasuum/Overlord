@@ -65,6 +65,7 @@ SQU_openRespawnMenu = {
 			};
 		}];
 	//update section
+	cutText ["","BLACK IN"];//failsafe for singleplayer bug
 	while {uiNamespace getVariable ["SQU_Respawn_shown", false]} do {
 		_objs = _resList getVariable ["objects", []];
 		_sel = lbCurSel _resList;
@@ -75,7 +76,7 @@ SQU_openRespawnMenu = {
 			if (!(_x in _objs))then{
 				_objs = _objs + [_x];
 			};
-		}forEach (AI_agents select _si);
+		}forEach (allUnits select {side _x == _side});
 
 		{
 			if (_forEachIndex == _sel) then {

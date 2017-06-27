@@ -38,6 +38,18 @@ class RscTitles {
 	#include "plugins\ais_injury\dialogs\rscTitlesAIS.hpp"
 };
 
+class CfgCommunicationMenu {
+	class Support_Artillery {
+		text = "Artillery Strike";
+		submenu = "";
+		expression = "[pos,caller] execVM ""scripts\objArty.sqf"";";
+		icon = "\a3\Ui_f\data\GUI\Cfg\CommunicationMenu\artillery_ca.paa";
+    	cursor = "\a3\Ui_f\data\IGUI\Cfg\Cursors\iconCursorSupport_ca.paa";
+		enable = 0;
+		removeAfterExpressionCall = 1;
+	};
+};
+
 class CfgSounds
 {
 	sounds[]= {gunshot};

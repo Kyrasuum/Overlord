@@ -148,7 +148,6 @@ RecLander = {
 					_unit = _group createUnit [(SidesAgents select 0)select 1, getMarkerPos "boatSpwn", [], 10, "FORM"];
 					_unit assignAsCargoIndex [_boat, i];  
 					_unit moveInCargo _boat;
-					[_unit, true] execVM "automedic.sqf";
 				}; 
 				if (_num == 7) then { 
 					_unit = _group createUnit [(SidesAgents select 0)select 2, getMarkerPos "boatSpwn", [], 10, "FORM"];
@@ -179,7 +178,6 @@ RecLander = {
 		_this select 1 hcSetGroup [_group];
 
 		_boat call BeachLand;
-	};
 	}else{
 		_group = createGroup (Sides select 1);  
 
@@ -197,7 +195,7 @@ RecLander = {
 		for [{_i=0;}, {_i<30;}, {_i=_i+1;}] do  
 		{  
 			if ([(Sides select 1)] call BIS_fnc_respawnTickets >= 1) then{
-				_num = floor random 10; 
+				_num = round (random 10); 
 				if (_num <= 5) then { 
 					_unit = _group createUnit [(SidesAgents select 1)select 0, getMarkerPos "boatSpwn", [], 10, "FORM"];
 					_unit assignAsCargoIndex [_boat, i];  
@@ -207,7 +205,6 @@ RecLander = {
 					_unit = _group createUnit [(SidesAgents select 1)select 1, getMarkerPos "boatSpwn", [], 10, "FORM"];
 					_unit assignAsCargoIndex [_boat, i];  
 					_unit moveInCargo _boat;
-					[_unit, true] execVM "automedic.sqf";
 				}; 
 				if (_num == 7) then { 
 					_unit = _group createUnit [(SidesAgents select 1)select 2, getMarkerPos "boatSpwn", [], 10, "FORM"];

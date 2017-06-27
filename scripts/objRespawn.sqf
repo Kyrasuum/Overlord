@@ -30,7 +30,7 @@ if (_object isKindOf "StaticWeapon") then {
         _pos = getPosATL _this;
         _dir = getDir _this;
         _class = typeOf _this;
-        _this deleteVehicle;
+        deleteVehicle _this;
 
         _object = createVehicle [_class, _pos, [], 0, "NONE"];
         _object setPos _pos;
@@ -54,9 +54,6 @@ if (toLower(_class) find "anzac" >= 0) then {
     _ticket = 1;
 };
 if (toLower(_class) find "flak" >= 0) then {
-    AAAlive = AAAlive + 1;  
-    publicVariable "AAAlive";
-    _object addEventHandler ["killed", "AAAlive = AAAlive - 1; publicVariable ""AAAlive"";"];
     [_object, 1000] execVM "scripts\objFlak.sqf";
     _ticket = 1;
 };

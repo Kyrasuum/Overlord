@@ -1,3 +1,7 @@
+//--
+//--This file handles all the AI directives and intersquad commands.
+//--
+
 //Takes a position to start from and a position you want cover from
 //this returns a position that is behind cover
 AI_findCover = {
@@ -193,10 +197,12 @@ AI_findPath = {
 		_StrLocs = [_hex] call SQU_ReturnNeighbours;
 		_locs = [];
 		{
-			if (!(isNil{missionNamespace getVariable _x}))then{
-				_loc = (missionNamespace getVariable _x);
-				if ( (_loc getVariable "SQU_HexType") in _type) then {
-					_locs = _locs + [_loc];
+			if (!(isNil{missionNamespace getVariable [_x,locationNull]}))then{
+				_loc = (missionNamespace getVariable [_x,locationNull]);
+				if (typeName _loc == "LOCATION")then{
+					if ( (_loc getVariable ["SQU_HexType","Error"]) in _type) then {
+						_locs = _locs + [_loc];
+					};
 				};
 			};
 		} forEach _StrLocs;
@@ -308,8 +314,6 @@ AI_squadCom = {
 		/*loop over all units in group*/{
 			_unit = _x;
 			if (alive _unit && !isPlayer _unit) then {
-				//prevent crappy unit formations
-				//if (unitReady _unit) then {doStop _unit;};
 				//used to assault location or simply change position
 				if (waypointType _order == "MOVE") then {
 					//switch speed based on distance and enemies
@@ -419,8 +423,11 @@ AI_squadCom = {
 							if (waypointType _order == "SAD") then{
 								//be aggressive
 								_target = _unit findNearestEnemy _unit;
-								_unit doTarget _target;
-								_unit doFire _target;
+								_unit CommandWatch _target;
+								for "_i" from 0 to 10 do {
+									sleep 0.1;
+									_unit fire primaryWeapon _unit;
+								};
 								//check if we are effective... if not switch waypoint to HOLD
 								if (_unit getVariable "Suppression" > 0.5) then {
 									_order setWaypointType "HOLD";
@@ -428,20 +435,16 @@ AI_squadCom = {
 							}else{
 								//be defensive
 								_target = _unit findNearestEnemy _unit;
-								_unit doTarget _target;
-								//throw grenades
-								_mags = magazinesDetail _unit;
-								_grens = [];
-								{
-									_mag = _x splitString "([ ]/:)";
-									if ("Grenade" in _mag) exitWith {
-										_unit action ["UseMagazine", _unit, _unit, 0, _mag select ((count _mag)-1)];
-									};
-								}forEach _mags;
+								_unit CommandWatch _target;
 								//suppress enemies for friendlies
-								_unit doSuppressiveFire _target;
+								for "_i" from 0 to 10 do {
+									sleep 0.1;
+									_unit fire primaryWeapon _unit;
+								};
+								_unit addMagazine "HandGrenade_Stone";
+								_unit forceWeaponFire ["HandGrenade_Stone","HandGrenade_Stone"];
 								//request support
-								[_direc,side _ldr] execVM "scripts\objArty.sqf";
+								[_direc,_ldr] execVM "scripts\objArty.sqf";
 								//check if we are effective... if so switch waypoint to SAD
 								if (_unit getVariable "Suppression" < 0.5) then {
 									_order setWaypointType "SAD";
@@ -471,7 +474,7 @@ AI_squadCom = {
 							//set our movepos to be a retreat
 							_movePos = (position _unit) getPos [100,_target+180];
 							//request support
-							[_direc,side _ldr] execVM "scripts\objArty.sqf";
+							[_direc,_ldr] execVM "scripts\objArty.sqf";
 							//check if we are effective... if so switch to SAD
 							if (_unit getVariable "Suppression" < 0.5) then {
 								_order setWaypointType "SAD";
@@ -529,7 +532,7 @@ AI_squadCom = {
 								_unit setVariable ["PatrolTarget",_target];
 								//advance with patrol
 								_movePos = _target;
-								_unit doWatch _target;
+								_unit CommandWatch _target;
 								_order setWaypointSpeed "FULL";
 								_order setWaypointBehaviour "AWARE";
 							};
@@ -586,7 +589,7 @@ AI_squadCom = {
 						}else{
 							//already in cover
 							//be a garrison... cards anyone?
-							_unit doWatch _direc;
+							_unit commandWatch _direc;
 							_order setWaypointBehaviour "AWARE";
 
 							//check if we engaged an enemy so we can hide in a hole
@@ -645,7 +648,7 @@ AI_squadCom = {
 				};
 				//move towards calculated position with behavior determined above
 				if (!(isNil "_movePos")) then {
-					_unit setDestination [_movePos, "LEADER PLANNED", true];
+					_unit moveTo _movePos;
 				};
 			};
 		}forEach (units _grp);
@@ -715,7 +718,19 @@ AI_aiComm = {
 		}else{ 
 			// garrison/patrol (GUARD/SUPPORT)
 			// first check if we are a valid patrol unit and we dont have too many patrols
-			if (vehicle _unit != _unit && !((vehicle _unit) isKindOf "Ship") && ((SQU_Patrols select _si) / (_side countSide allGroups)) < PatrolPerc) then {
+			_patrols = 0;
+			{
+				_i = (currentWaypoint _x);
+				_wps = (waypoints _x);
+				if ( _i < count(_wps) && _i >= 0 )then{
+					if ( !isNil{waypointType (_wps select _i)} )then{
+						if ( waypointType (_wps select _i) == "SUPPORT" )then{
+							_patrols = _patrols + 1;
+						};
+					};
+				};
+			}forEach (AI_Groups select {side _x == _side});
+			if (vehicle _unit != _unit && !((vehicle _unit) isKindOf "Ship") && (_patrols / 1+ count(AI_Groups select {side _x == _side}) < PatrolPerc)) then {
 				//find the biggest gap in defenses
 				_dist = 0;//initializing
 				_movePos = position _unit;//failsafe incase no friendlies along border
@@ -728,7 +743,7 @@ AI_aiComm = {
 					_friendlies = [];
 					{
 						if(side _x == _side) then {
-							_friendlies = _friendlies + _x;
+							_friendlies = _friendlies + _x;//ERROR HERE
 						};
 					} forEach _units;
 					if (count _friendlies == 0) then {
@@ -745,7 +760,6 @@ AI_aiComm = {
 						} foreach _friendlies;
 					};
 				}forEach (SQU_Frontlines select _si);
-				SQU_Patrols set [_si, (SQU_Patrols select _si) + 1];//increment patrol number
 				_type = "SUPPORT";
 			}else{
 				//is there a friendly ungarrisoned town
@@ -839,11 +853,36 @@ AI_aiComm = {
 		   	  			_movePos = [_movePos, 1, SQU_HexRadius, 3, 0, 20, 0, [], [_movePos, _movePos]] call BIS_fnc_findSafePos;
 					};
 				};
+				//parse into text for player's view
+				_objType = "target";
+				_descript = "Move and advance to the position marked."; 
+				switch (_type) do { 
+					case "MOVE" : {_objType = "target"; _descript = "Take and hold the marked territory.";}; 
+					case "SAD" : {_objType = "kill"; _descript = "There are enemies in your AO; Take them out.";}; 
+					case "HOLD" : {_objType = "destroy"; _descript = "There are enemies in your AO; Dig in and prepare for an attack.";}; 
+					case "SENTRY" : {_objType = "attack"; _descript = "Enemy forces have been spotted advancing on your position.  Make them pay for every inch.";}; 
+					case "SUPPORT" : {_objType = "scout"; _descript = "You have been assigned to patrol for enemy movement, be vigilant.";}; 
+					case "GUARD" : {_objType = "defend"; _descript = "Defend the designated military objective with your life.";}; 
+					case "GETIN" : {_objType = "meet"; _descript = "You have been assigned a transport; Board it and await further orders.";}; 
+					case "GETOUT" : {_objType = "exit"; _descript = "Your vehicle has been deemed unnecessary for future objectives; Ditch it and join your comrades.";}; 
+				};
 				//assign commander order as a task
-				["Commander Order", true] call BIS_fnc_deleteTask;
-				[_grp,["Commander Order"],
-					["Your commander has issued you an order to "+_type+" in the assigned area.",_type],
-					_movePos,1,2,true,"target",true] call BIS_fnc_taskCreate;
+				//only create new task if it does not exist
+				if (["MainObjective"] call BIS_fnc_taskExists) then {
+					if (["MainObjective"] call BIS_fnc_taskState in ["Succeeded","Failed"]) then {
+						//show notification if we are getting a new order after passing through the last
+						[["MainObjective","Commander Order"],_grp,
+							[_descript,_type],_movePos,"CREATED",3,true,false,_objType,false] call BIS_fnc_setTask;
+					}else{
+						//we are just ammending a previous order, do not show notification.
+						[["MainObjective","Commander Order"],_grp,
+							[_descript,_type],_movePos,"CREATED",3,false,false,_objType,false] call BIS_fnc_setTask;
+					};
+				}else{
+					//creating a new order
+					[_grp,["MainObjective","Commander Order"],
+						[_descript,_type],_movePos,1,3,true,_objType,false] call BIS_fnc_taskCreate;
+				};
 			}else{
 				//assign order as a waypoint
 				{deleteWaypoint [_grp,(_x select 1)];}forEach (waypoints _grp);

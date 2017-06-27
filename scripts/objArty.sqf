@@ -1,7 +1,8 @@
 //Creates an arty target centered around the called position with random spread
 //this object depends on the amount of arty defined as being alive
 _pos = _this select 0;
-_side = _this select 1;
+_obj = _this select 1;
+_side = side _obj;
 [[[_pos],"plugins\ambient\alias_artillery.sqf"],"BIS_fnc_execVM",false,false] spawn BIS_fnc_MP;
 {
 	_pos spawn {
@@ -36,3 +37,8 @@ _side = _this select 1;
 		};
 	};
 }forEach (ArtyAlive select (Sides find _side));
+
+//give the radio command back
+if (isPlayer _obj && alive _obj) then {
+	_arty = [_this, "Support_Artillery",nil,nil,""] call BIS_fnc_addCommMenuItem;
+};

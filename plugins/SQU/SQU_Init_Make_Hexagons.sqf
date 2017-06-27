@@ -21,7 +21,7 @@ for "_h" from 0 to SQU_HozAmount-1 do //rows
 			if(_i == 0)then //create center
 			{				
 				_locNum = _h + (_v * .01);
-				_name = format ["%1",_locNum]; 					
+				_name = format ["%1",_locNum]; 		
 
 				_Location = createLocation ["NameVillage", [_hoz,_vert, 0], 100, 100];
 				_Location setName _name;
